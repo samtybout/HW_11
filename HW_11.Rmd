@@ -50,6 +50,26 @@ my_table %>%
 + Write a function that works for a single data frame from the list.  
 + Write an apply function to 'apply' your function across all the data frames in the list.  
 
+```{r, include=FALSE}
+load_data = function(path = 'data'){
+  setwd(".")
+  filenames = list.files(path = path)
+  dataFiles = lapply(paste0(path, '/', filenames), read.csv, skip = 10, col.names = c('Date', 'ppt', 'tmin', 'tmean', 'tmax'))
+  names(dataFiles) = sub('.csv','',filenames)
+  return(dataFiles)
+}
+
+tcheck = function(data, threshold){
+  data$thresh = data$tmin > threshold
+  return(data)
+}
+
+tcheck_all = function(data_list, threshold){
+  return(lapply(data_list, tcheck, threshold = threshold))
+}
+```
+
+
 **3) Write a loop to extract Cape Grim monthly temperature data (GHCN) for 1985-2019 using rnoaa.**
 
 *Hints:*  
