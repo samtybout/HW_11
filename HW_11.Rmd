@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, include=FALSE}
 library(kableExtra)
+library(rnoaa)
 ```
 
 #### apply
@@ -79,6 +80,16 @@ tcheck_all = function(data_list, threshold){
 and store it at the top of your project directory.    
 + stationid='GHCND:ASN00091245'  
 + Not all years have data!   
+
+```{r}
+data = data.frame()
+for(year in 1985:2019){
+  start = paste0(as.character(year), '-01-01')
+  end = paste0(as.character(year), '-12-31')
+  data = rbind(data, ncdc(datasetid = 'GSOM', stationid = 'GHCND:ASN00091245', startdate = start, enddate = end)[["data"]])
+}
+data
+```
 
 **4) Calculate the average annual temperature and the number of months used to generate that mean from #3 above (years without data can be excluded).  Report in a table, for example:**
 ```{r, echo = FALSE}
