@@ -8,68 +8,76 @@ output: html_document
 **1) Using the R data Titanic, use apply to answer the following:**  
 
 Were rates of survival higher among children or adults?  
- 
-    Survival rates were higher among children, although the rates for 3rd class children was
-    comparable to most adult men.
+
+```{r}
+apply(Titanic, c(3,4), sum)
+```
+Rates of survival were higher among children than adults, although the rates for 3rd class children were
+comparable to most adult men.
 
 Were rates of survival higher among men or women?  
 
-    Women had a significantly higher survival rate than men.
+```{r}
+apply(Titanic, c(2,4), sum)
+```
+Rates of survival were higher among women than men.
+
 
 **2) Some insect species can only survive if daily temperatures stay above some temperature.  Write a function that takes two arguments, a data frame and a temperature that returns a TRUE when the tmin > X and a FALSE when tmin is < X, where X is the threshold temperature.  Have the function then add a logical vector to each daily climate data frame reporting whether that threshold was exceeded (TRUE) or not (FALSE). Apply this function across all three of the daily data frames provided in /data. For each data frame, your results might look like:**
 
-```{r}
-data.path <- "./data/"
-glob.path <- paste0(data.path, "*", ".csv")  
-dataFiles <- lapply(Sys.glob(glob.path), read.csv, skip=11, head=F)
-climvars <- c("pdate", "ppt", "tmin", "tmean", "tmax")
-dataFiles <- lapply(dataFiles, setNames, climvars)
-head(dataFiles[[1]])
-```
+```{r, include=FALSE}
+load_data = function(path = 'data'){
+  setwd(".")
+  filenames = list.files(path = path)
+  dataFiles = lapply(paste0(path, '/', filenames), read.csv, skip = 10, col.names = c('Date', 'ppt', 'tmin', 'tmean', 'tmax'))
+  names(dataFiles) = sub('.csv','',filenames)
+  return(dataFiles)
+}
 
-```{r}
-threshold <- function(dataset,temp){
-  dataset$thresh <- (dataset[,3] > temp)
-  return(dataset)
+tcheck = function(data, threshold){
+  data$thresh = data$tmin > threshold
+  return(data)
+}
+
+tcheck_all = function(data_list, threshold){
+  return(lapply(data_list, tcheck, threshold = threshold))
 }
 ```
-
-```{r}
-lapply(dataFiles, threshold, -3)
-```
-
 
 **3) Write a loop to extract Cape Grim monthly temperature data (GHCN) for 1985-2019 using rnoaa.**
-
+  
 ```{r}
-datalist <- vector(mode="list",length=1)
-for (year in 1985:2019){
-  startyr <- paste0(year,'-01-01')
-  endyr <- paste0(year,'-12-01')
-  tempdata <- ncdc(datasetid='GSOM', stationid = 'GHCND:ASN00091245', datatypeid='TAVG', startdate = startyr, enddate = endyr, limit = 100, includemetadata = FALSE)
-datalist <- append(datalist, tempdata)
+data = data.frame()
+for(year in 1985:2019){
+  start = paste0(as.character(year), '-01-01')
+  end = paste0(as.character(year), '-12-31')
+  data = rbind(data, ncdc(datasetid = 'GSOM', stationid = 'GHCND:ASN00091245', datatypeid = "TAVG", startdate = start, enddate = end)[["data"]])
+  Sys.sleep(0.2)
 }
+data
 ```
 
-```{r}
-finaldata <- datalist[grepl("data", names(datalist))]
-```
-  
+**4) Calculate the average annual temperature and the number of months used to generate the mean from #3 above (years without data can be excluded).  Report in a table.**
 
-**4) Calculate the average annual temperature and the number of months used to generate that mean from #3 above (years without data can be excluded).  Report in a table, for example:**
-```{r}
-tempavg <- setNames(data.frame(matrix(ncol = 3, nrow = 35)), c("Year", "Tavg", "Mons"))
-rowsToDelete <- c()
-for(x in 1:35){
-  currentdata <- data.frame(finaldata[x])
-  if(nrow(currentdata) >= 1){
-    tempavg[x,1] <- (1984 + x)
-    tempavg[x,2] <- (colSums(currentdata[4])/nrow(currentdata))
-    tempavg[x,3] <- nrow(currentdata)
-  }
-  
-tempavg <- na.omit(tempavg)
+```
+install.packages("kableExtra")
+```
+```
+library(knitr)
+library(kableExtra)
+```
+```
+{r, echo = FALSE}
+yearmean = function(yeardata){
+  return(data.frame(T_average = mean(yeardata$value), n_months = nrow(yeardata)))
 }
-tempavg %>%
-  kable(digits=3)
+```
+```{r}
+data$year = as.integer(substr(data$date, 1, 4))
+yearlist = split(data, data$year)
+means = lapply(yearlist, yearmean)
+means = do.call(rbind, means)
+means %>%
+  kable(digits=3) %>%
+  kable_styling()
 ```
