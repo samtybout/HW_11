@@ -1,1 +1,1 @@
-options(noaakey="your_noaa_token")
+options(noaakey="BafLXFLekAOwFNqsBqtGLOQnxDZVhUQD")
